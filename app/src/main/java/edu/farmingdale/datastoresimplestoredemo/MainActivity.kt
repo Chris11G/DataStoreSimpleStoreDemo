@@ -9,14 +9,23 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import edu.farmingdale.datastoresimplestoredemo.data.AppPreferences
 import edu.farmingdale.datastoresimplestoredemo.ui.theme.DataStoreSimpleStoreDemoTheme
@@ -68,6 +77,11 @@ fun DataStoreDemo(modifier: Modifier) {
     val store = AppStorage(LocalContext.current)
     val appPrefs = store.appPreferenceFlow.collectAsState(AppPreferences())
     val coroutineScope = rememberCoroutineScope()
+    var username by remember { mutableStateOf("") }
+    var highScoreText by remember { mutableStateOf("") }
+    var darkMode by remember { mutableStateOf(false) }
+
+
     Column (modifier = Modifier.padding(50.dp)) {
         Text("Values = ${appPrefs.value.userName}, " +
                 "${appPrefs.value.highScore}, ${appPrefs.value.darkMode}")
@@ -79,6 +93,55 @@ fun DataStoreDemo(modifier: Modifier) {
         }) {
             Text("Save Values")
         }
+
+        TextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username") }
+        )
+        Button(onClick = {
+            coroutineScope.launch {
+                store.saveUsername(username)
+            }
+        }) {
+            Text("Save Username")
+        }
+
+
+        TextField(
+            value = highScoreText,
+            onValueChange = { newText ->
+                // Allow empty or digits only
+                if (newText.isEmpty() || newText.all { it.isDigit() }) {
+                    highScoreText = newText
+                }
+            },
+            label = { Text("High Score") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Button(onClick = {
+            val parsedHighScore = highScoreText.toIntOrNull() ?: 0
+            coroutineScope.launch {
+                store.saveHighScore(parsedHighScore)
+            }
+        }) {
+            Text("Save High Score")
+        }
+
+
+        Switch(
+            checked = darkMode,
+            onCheckedChange = {
+                darkMode = it
+                coroutineScope.launch {
+                    store.saveDarkMode(darkMode)
+                }
+            }
+        )
+        Text("Dark Mode")
+
+
     }
 }
 
